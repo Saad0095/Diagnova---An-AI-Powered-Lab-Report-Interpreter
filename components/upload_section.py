@@ -2,11 +2,9 @@ import streamlit as st
 
 
 def render_upload_section():
-    """Renders the file upload and text input section."""
 
     st.markdown('<div class="section-label">📂 Input Report</div>', unsafe_allow_html=True)
 
-    # ── Input mode toggle ──────────────────────────────────────────────────────
     input_mode = st.radio(
         "Input method",
         ["📄 Upload File", "✏️ Paste Text"],
@@ -14,22 +12,18 @@ def render_upload_section():
         label_visibility="collapsed",
     )
 
-    st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
 
-    # ── Upload mode ────────────────────────────────────────────────────────────
     if input_mode == "📄 Upload File":
         st.markdown("""
-        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.5rem;">
-            Supported formats:&nbsp;
-            <code style="background:var(--blue-50);color:var(--blue-700);
-                padding:2px 8px;border-radius:5px;border:1px solid var(--border);
-                font-size:0.75rem;">PDF</code>&nbsp;
-            <code style="background:var(--blue-50);color:var(--blue-700);
-                padding:2px 8px;border-radius:5px;border:1px solid var(--border);
-                font-size:0.75rem;">PNG</code>&nbsp;
-            <code style="background:var(--blue-50);color:var(--blue-700);
-                padding:2px 8px;border-radius:5px;border:1px solid var(--border);
-                font-size:0.75rem;">JPG</code>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.5rem;">
+            Supported:&nbsp;
+            <code style="background:var(--blue-50);color:var(--blue-700);padding:1px 7px;
+                border-radius:4px;border:1px solid var(--border);font-size:0.72rem;">PDF</code>&nbsp;
+            <code style="background:var(--blue-50);color:var(--blue-700);padding:1px 7px;
+                border-radius:4px;border:1px solid var(--border);font-size:0.72rem;">PNG</code>&nbsp;
+            <code style="background:var(--blue-50);color:var(--blue-700);padding:1px 7px;
+                border-radius:4px;border:1px solid var(--border);font-size:0.72rem;">JPG</code>
         </p>
         """, unsafe_allow_html=True)
 
@@ -43,11 +37,11 @@ def render_upload_section():
             st.session_state["uploaded_file"] = uploaded_file
             st.session_state["input_ready"]   = True
             st.markdown(f"""
-            <div style="display:flex;align-items:center;gap:10px;margin-top:0.8rem;
+            <div style="display:flex;align-items:center;gap:8px;margin-top:0.7rem;
                         background:var(--green-light);border:1.5px solid var(--green-border);
-                        border-radius:var(--radius-md);padding:0.75rem 1rem;">
+                        border-radius:var(--radius-md);padding:0.65rem 0.9rem;">
                 <span>✅</span>
-                <span style="font-size:0.84rem;color:var(--green);font-weight:600;">
+                <span style="font-size:0.82rem;color:var(--green);font-weight:600;word-break:break-all;">
                     {uploaded_file.name} — ready to analyze
                 </span>
             </div>
@@ -55,16 +49,14 @@ def render_upload_section():
         else:
             st.session_state["input_ready"] = False
 
-    # ── Paste mode ─────────────────────────────────────────────────────────────
     else:
         pasted_text = st.text_area(
             "Paste lab report text",
-            height=200,
+            height=190,
             placeholder=(
                 "Paste your lab values here, e.g.\n\n"
                 "Hemoglobin: 11.2 g/dL\n"
                 "WBC Count: 9,800 /μL\n"
-                "Platelets: 145,000 /μL\n"
                 "Fasting Glucose: 108 mg/dL"
             ),
             label_visibility="collapsed",
@@ -75,9 +67,8 @@ def render_upload_section():
         else:
             st.session_state["input_ready"] = False
 
-    st.markdown("<div style='height:1.2rem'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
-    # ── Report Type ────────────────────────────────────────────────────────────
     st.markdown('<div class="section-label">🔬 Report Type</div>', unsafe_allow_html=True)
 
     report_type = st.selectbox(
@@ -99,32 +90,49 @@ def render_upload_section():
 
     st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
-    # ── Analyze Button ─────────────────────────────────────────────────────────
+    # ── Show warning message state ─────────────────────────────────────────────
+    if "show_warning" not in st.session_state:
+        st.session_state["show_warning"] = False
+
     if st.button("🔍 Analyze Report", use_container_width=True):
         if st.session_state.get("input_ready"):
             st.session_state["analyze_clicked"] = True
             st.session_state["show_results"]    = True
+            st.session_state["show_warning"]    = False
         else:
-            st.warning("⚠️ Please upload a file or paste report text first.")
+            st.session_state["show_warning"] = True
 
-    # ── Tips ───────────────────────────────────────────────────────────────────
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+    # ── Custom styled warning — never white text ───────────────────────────────
+    if st.session_state.get("show_warning"):
+        st.markdown("""
+        <div style="display:flex;align-items:flex-start;gap:0.7rem;margin-top:0.8rem;
+                    background:#fff8e1;border:1.5px solid #f5c878;
+                    border-radius:var(--radius-md);padding:0.8rem 1rem;">
+            <span style="font-size:1rem;flex-shrink:0;">⚠️</span>
+            <span style="font-size:0.84rem;color:#7a5c00;font-weight:500;line-height:1.5;">
+                Please upload a file or paste report text first before analyzing.
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<div style='height:0.8rem'></div>", unsafe_allow_html=True)
+
     st.markdown("""
-    <div style="padding:1.1rem 1.2rem;background:var(--blue-50);
+    <div style="padding:1rem 1.1rem;background:var(--blue-50);
                 border:1px solid var(--border);border-radius:var(--radius-md);">
-        <p style="font-size:0.68rem;font-weight:700;letter-spacing:0.12em;
-                  text-transform:uppercase;color:var(--blue-700);margin:0 0 0.7rem 0;">
+        <p style="font-size:0.67rem;font-weight:700;letter-spacing:0.1em;
+                  text-transform:uppercase;color:var(--blue-700);margin:0 0 0.6rem 0;">
             💡 Tips for best results
         </p>
-        <ul style="margin:0;padding-left:1.1rem;">
-            <li style="font-size:0.8rem;color:var(--text-body);margin-bottom:0.35rem;line-height:1.5;">
+        <ul style="margin:0;padding-left:1rem;">
+            <li style="font-size:0.78rem;color:var(--text-body);margin-bottom:0.3rem;line-height:1.5;">
                 Ensure the report is clear and legible
             </li>
-            <li style="font-size:0.8rem;color:var(--text-body);margin-bottom:0.35rem;line-height:1.5;">
+            <li style="font-size:0.78rem;color:var(--text-body);margin-bottom:0.3rem;line-height:1.5;">
                 Select the correct report type above
             </li>
-            <li style="font-size:0.8rem;color:var(--text-body);line-height:1.5;">
-                PDF format gives the most accurate text extraction
+            <li style="font-size:0.78rem;color:var(--text-body);line-height:1.5;">
+                PDF format gives the most accurate extraction
             </li>
         </ul>
     </div>
