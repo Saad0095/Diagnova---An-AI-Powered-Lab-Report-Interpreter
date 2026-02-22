@@ -74,36 +74,27 @@ def render_sidebar():
             st.markdown("""
             <div style="padding:0.5rem 0;">
                 <p style="font-size:0.68rem;font-weight:700;letter-spacing:0.12em;
-                          text-transform:uppercase;color:var(--blue-700);margin-bottom:0.8rem;">
-                    📋 Supported Reports
+                          text-transform:uppercase;color:var(--blue-700);margin-bottom:0.5rem;">
+                    👤 Your Profile
                 </p>
+            </div>
             """, unsafe_allow_html=True)
-
-            reports = [
-                "🩸 CBC (Complete Blood Count)",
-                "🧪 Metabolic Panel",
-                "💛 Liver Function (LFT)",
-                "🫘 Kidney Function (KFT)",
-                "🍬 Diabetes Panel",
-                "🦋 Thyroid (TFT)",
-                "💊 Lipid Profile",
-                "🔎 Urinalysis",
-            ]
-            for r in reports:
-                st.markdown(f"""
-                <div style="font-size:0.76rem;color:var(--text-body);padding:0.3rem 0;
-                            border-bottom:1px solid var(--border);">
-                    {r}
-                </div>
-                """, unsafe_allow_html=True)
-
+            
+            age = st.number_input("Age", min_value=1, max_value=120, value=30)
+            activity = st.selectbox("Activity Level", ["Sedentary", "Moderate", "Active", "Athlete"])
+            goal = st.selectbox("Health Goal", ["General Wellness", "Weight Loss", "Muscle Gain", "Energy Boost"])
+            
+            st.session_state["user_profile"] = {
+                "age": age,
+                "activity": activity,
+                "goal": goal
+            }
+            
             st.markdown("""
             <div style="margin-top:1rem;padding:0.7rem;background:var(--blue-50);
                         border-radius:var(--radius-sm);border:1px solid var(--border);">
-                <p style="font-size:0.7rem;color:var(--text-muted);margin:0;line-height:1.5;">
-                    Built for <strong style="color:var(--blue-700);">Hackathon 2025</strong><br/>
-                    Not a substitute for medical advice.
+                <p style="font-size:0.65rem;color:var(--text-muted);margin:0;line-height:1.4;">
+                    Personalize your <strong style="color:var(--blue-700);">Health Coach</strong> insights by filling this out.
                 </p>
-            </div>
             </div>
             """, unsafe_allow_html=True)

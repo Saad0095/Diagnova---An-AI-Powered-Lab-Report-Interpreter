@@ -41,7 +41,7 @@ def call_llm(prompt: str) -> str:
         
         # Call Groq API
         response = client.chat.completions.create(
-            model="mixtral-8x7b-32768",  # Fast, accurate model
+            model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1,  # Low temperature for consistent JSON output
             max_tokens=2000
@@ -207,58 +207,45 @@ def process_lab_report(text: str) -> dict:
     """
     Main function to process raw lab report text into clean lab values.
     
-    Pipeline:
-    1. Extract values using LLM
-    2. Clean and normalize to Dict[str, float]
-    3. Fallback to regex extraction if LLM fails
-    4. Return result ready for risk analysis
-    
-    Args:
-        text: Raw lab report text pasted by user
-        
     Returns:
-        dict: Clean dictionary {test_name: float_value}
-              Empty dict if processing fails
-              GUARANTEED: Dict[str, float] format - no strings, no nested objects
-              
-    Example Output:
-        {
-            "Hemoglobin": 9.8,
-            "WBC Count": 12000.0,
-            "MCV": 70.0
+        dict: {
+            "data": Dict[str, float],
+            "metadata": {
+                "extraction_method": "llm" | "regex" | "failed",
+                "raw_count": int
+            }
         }
     """
-    # Validate input
+    result_package = {
+        "data": {},
+        "metadata": {"extraction_method": "failed", "raw_count": 0}
+    }
+
     if not text or not isinstance(text, str) or not text.strip():
-        print("❌ No valid text provided")
-        return {}
+        return result_package
     
     try:
         text = text.strip()
-        print(f"📝 Processing {len(text)} characters of text...")
         
         # Step 1: Try LLM extraction first
         extracted_data = extract_json_from_llm(text)
         cleaned_data = clean_lab_values(extracted_data)
         
         if cleaned_data:
-            print(f"✅ LLM extraction successful: {len(cleaned_data)} values")
+            result_package["data"] = cleaned_data
+            result_package["metadata"]["extraction_method"] = "llm"
+            result_package["metadata"]["raw_count"] = len(cleaned_data)
         else:
-            print("⚠️ LLM extraction returned empty, trying regex fallback...")
             # Step 2: If LLM failed, try regex fallback
             fallback_data = regex_fallback_extraction(text)
             cleaned_data = clean_lab_values(fallback_data)
             if cleaned_data:
-                print(f"✅ Regex fallback successful: {len(cleaned_data)} values")
-            else:
-                print("❌ Both LLM and regex extraction failed")
+                result_package["data"] = cleaned_data
+                result_package["metadata"]["extraction_method"] = "regex"
+                result_package["metadata"]["raw_count"] = len(cleaned_data)
         
-        # Step 3: Final safeguard - ensure all values are float
-        result = {k: v for k, v in cleaned_data.items() if isinstance(v, float)}
-        print(f"📊 Final result: {len(result)} valid lab values")
-        return result
+        return result_package
         
     except Exception as e:
-        # Never crash the app
         print(f"❌ Exception in process_lab_report: {str(e)}")
-        return {}
+        return result_package

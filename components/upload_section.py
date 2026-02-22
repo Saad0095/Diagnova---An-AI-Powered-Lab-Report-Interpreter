@@ -95,17 +95,24 @@ def render_upload_section():
 
     st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
-    # ── Show warning message state ─────────────────────────────────────────────
-    if "show_warning" not in st.session_state:
-        st.session_state["show_warning"] = False
+    # ── Action Buttons ────────────────────────────────────────────────────────
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        if st.button("🔍 Analyze Report", use_container_width=True):
+            if st.session_state.get("input_ready"):
+                st.session_state["analyze_clicked"] = True
+                st.session_state["show_results"]    = True
+                st.session_state["show_warning"]    = False
+            else:
+                st.session_state["show_warning"] = True
 
-    if st.button("🔍 Analyze Report", use_container_width=True):
-        if st.session_state.get("input_ready"):
-            st.session_state["analyze_clicked"] = True
-            st.session_state["show_results"]    = True
+    with col2:
+        if st.button("✨ Try Sample Report", use_container_width=True):
+            st.session_state["sample_clicked"] = True
+            st.session_state["show_results"]   = True
+            st.session_state["analyze_clicked"] = False
             st.session_state["show_warning"]    = False
-        else:
-            st.session_state["show_warning"] = True
 
     # ── Custom styled warning — never white text ───────────────────────────────
     if st.session_state.get("show_warning"):
