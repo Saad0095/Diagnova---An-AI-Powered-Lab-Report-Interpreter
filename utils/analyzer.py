@@ -8,8 +8,8 @@ import json
 
 def get_explanation_rag(test_name: str, value: float, status: str, ref_range_str: str):
     """
-    FEATURE 1: Lightweight RAG for Explanations
-    Retrieves medical definition and generates grounded explanation.
+    FEATURE 1: Grounded Clinical Intelligence Engine
+    Generates a patient-friendly explanation grounded in clinical context.
     """
     kb_entry = MEDICAL_KNOWLEDGE.get(test_name.lower().replace(" ", "_"), {})
     definition = kb_entry.get("definition", "No specific definition available.")
@@ -50,6 +50,7 @@ def get_explanation_rag(test_name: str, value: float, status: str, ref_range_str
 def detect_clinical_patterns(data: dict):
     """
     FEATURE 2: Multi-Parameter Clinical Pattern Detection
+    - Grounded Clinical Intelligence Engine: Explain parameters using a clinical corpus.
     Rule-based reasoning for combined results.
     """
     patterns = []
