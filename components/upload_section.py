@@ -36,6 +36,8 @@ def render_upload_section():
         if uploaded_file:
             st.session_state["uploaded_file"] = uploaded_file
             st.session_state["input_ready"]   = True
+            # Clear pasted text when file is uploaded
+            st.session_state["pasted_text"] = ""
             st.markdown(f"""
             <div style="display:flex;align-items:center;gap:8px;margin-top:0.7rem;
                         background:var(--green-light);border:1.5px solid var(--green-border);
@@ -48,6 +50,7 @@ def render_upload_section():
             """, unsafe_allow_html=True)
         else:
             st.session_state["input_ready"] = False
+            st.session_state["uploaded_file"] = None
 
     else:
         pasted_text = st.text_area(
@@ -64,6 +67,8 @@ def render_upload_section():
         if pasted_text.strip():
             st.session_state["pasted_text"] = pasted_text
             st.session_state["input_ready"] = True
+            # Clear uploaded file when text is pasted
+            st.session_state["uploaded_file"] = None
         else:
             st.session_state["input_ready"] = False
 

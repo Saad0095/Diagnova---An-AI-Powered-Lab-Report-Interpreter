@@ -1,5 +1,45 @@
 import streamlit as st
 import time
+import fitz  # PyMuPDF
+from PIL import Image
+import io
+from utils.extractor import process_lab_report
+from utils.analyzer import process_lab_results
+
+
+def extract_text_from_pdf(uploaded_file):
+    """Extract text from uploaded PDF file."""
+    try:
+        # Read PDF bytes
+        pdf_bytes = uploaded_file.read()
+        uploaded_file.seek(0)  # Reset file pointer
+        
+        # Open PDF with PyMuPDF
+        pdf_document = fitz.open(stream=pdf_bytes, filetype="pdf")
+        
+        # Extract text from all pages
+        text = ""
+        for page_num in range(pdf_document.page_count):
+            page = pdf_document[page_num]
+            text += page.get_text()
+        
+        pdf_document.close()
+        return text.strip()
+    except Exception as e:
+        print(f"❌ PDF extraction failed: {str(e)}")
+        return ""
+
+
+def extract_text_from_image(uploaded_file):
+    """Extract text from uploaded image file using OCR."""
+    try:
+        # For MVP: Just return empty string
+        # TODO: Implement OCR with tesseract or cloud OCR API
+        st.warning("⚠️ Image OCR not yet implemented. Please use PDF or paste text.")
+        return ""
+    except Exception as e:
+        print(f"❌ Image extraction failed: {str(e)}")
+        return ""
 
 # ── Mock data ─────────────────────────────────────────────────────────────────
 # NOTE FOR TEAMMATES: Replace MOCK_RESULTS with real AI/rule engine output.
@@ -143,14 +183,70 @@ def render_result_dashboard():
         """, unsafe_allow_html=True)
         return
 
-    # Loading
+    # Loading and processing
     if analyzing:
         with st.spinner("Extracting values · Checking ranges · Generating insights..."):
-            time.sleep(2)
+            # Get input - either pasted text or uploaded file
+            text = ""
+            
+            # Check for uploaded file first
+            uploaded_file = st.session_state.get("uploaded_file", None)
+            if uploaded_file is not None:
+                file_type = uploaded_file.type
+                print(f"📁 Processing uploaded file: {uploaded_file.name} (type: {file_type})")
+                
+                if file_type == "application/pdf":
+                    text = extract_text_from_pdf(uploaded_file)
+                    if text:
+                        print(f"✅ Extracted {len(text)} characters from PDF")
+                    else:
+                        st.error("❌ Could not extract text from PDF. Please try pasting text instead.")
+                elif file_type in ["image/png", "image/jpeg", "image/jpg"]:
+                    text = extract_text_from_image(uploaded_file)
+                else:
+                    st.error(f"❌ Unsupported file type: {file_type}")
+            
+            # Fall back to pasted text if no file or extraction failed
+            if not text:
+                text = st.session_state.get("pasted_text", "")
+                if text:
+                    print(f"📝 Using pasted text ({len(text)} characters)")
+            
+            if text:
+                try:
+                    print(f"\n{'='*60}\nPROCESSING LAB REPORT\n{'='*60}")
+                    
+                    # Step 1: Extract lab values from text using LLM
+                    extracted_data = process_lab_report(text)
+                    
+                    print(f"\n{'='*60}\nEXTRACTION COMPLETE\n{'='*60}")
+                    print(f"Extracted data: {extracted_data}")
+                    
+                    # Step 2: Process with risk analyzer
+                    if extracted_data:
+                        results = process_lab_results(extracted_data)
+                        st.session_state["analysis_results"] = results
+                        print(f"✅ Generated {len(results)} result cards")
+                    else:
+                        st.warning("⚠️ No lab values could be extracted. Try the regex fallback by using simple format like:\nHemoglobin: 11.2\nWBC: 7800")
+                        st.session_state["analysis_results"] = []
+                except Exception as e:
+                    st.error(f"❌ Error during analysis: {str(e)}")
+                    import traceback
+                    print(f"\n{'='*60}\nERROR TRACEBACK\n{'='*60}")
+                    traceback.print_exc()
+                    st.session_state["analysis_results"] = []
+            else:
+                st.warning("⚠️ No text found to analyze. Please paste lab report text or upload a PDF file.")
+                st.session_state["analysis_results"] = []
+        
         st.session_state["analyze_clicked"] = False
 
+    # Get results (either from analysis or from session state)
+    results = st.session_state.get("analysis_results", MOCK_RESULTS)
+    
     counts = {"green": 0, "yellow": 0, "red": 0}
-    for r in MOCK_RESULTS:
+    for r in results:
         counts[r["status"]] += 1
 
     st.markdown('<div class="section-label">📊 Analysis Results</div>', unsafe_allow_html=True)
@@ -180,10 +276,10 @@ def render_result_dashboard():
 
     # Tabs
     tabs = st.tabs(["🔬 All", "🚨 Abnormal", "⚠️ Borderline", "✅ Normal"])
-    with tabs[0]: _render_cards(MOCK_RESULTS)
-    with tabs[1]: _render_cards([r for r in MOCK_RESULTS if r["status"] == "red"])
-    with tabs[2]: _render_cards([r for r in MOCK_RESULTS if r["status"] == "yellow"])
-    with tabs[3]: _render_cards([r for r in MOCK_RESULTS if r["status"] == "green"])
+    with tabs[0]: _render_cards(results)
+    with tabs[1]: _render_cards([r for r in results if r["status"] == "red"])
+    with tabs[2]: _render_cards([r for r in results if r["status"] == "yellow"])
+    with tabs[3]: _render_cards([r for r in results if r["status"] == "green"])
 
     # Summary
     st.markdown(f"""
