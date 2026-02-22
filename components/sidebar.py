@@ -83,11 +83,13 @@ def render_sidebar():
             age = st.number_input("Age", min_value=1, max_value=120, value=30)
             activity = st.selectbox("Activity Level", ["Sedentary", "Moderate", "Active", "Athlete"])
             goal = st.selectbox("Health Goal", ["General Wellness", "Weight Loss", "Muscle Gain", "Energy Boost"])
+            language = st.selectbox("Display Language", ["English", "Spanish", "Urdu", "Hindi", "Arabic", "French", "German"])
             
             st.session_state["user_profile"] = {
                 "age": age,
                 "activity": activity,
-                "goal": goal
+                "goal": goal,
+                "language": language
             }
             
             st.markdown("""

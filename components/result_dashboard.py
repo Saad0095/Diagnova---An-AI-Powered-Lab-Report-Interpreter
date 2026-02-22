@@ -217,6 +217,22 @@ def render_result_dashboard():
         st.session_state["analyze_clicked"] = False
 
     analysis = st.session_state.get("full_analysis")
+    
+    # Language Change Trigger: If language changes in sidebar, re-run summary AI
+    user_profile = st.session_state.get("user_profile", {})
+    current_lang = user_profile.get("language", "English")
+    last_lang = st.session_state.get("last_language", "English")
+
+    if analysis and current_lang != last_lang:
+        with st.spinner(f"Translating summary to {current_lang}..."):
+            from utils.analyzer import generate_summary_ai
+            new_summary = generate_summary_ai(analysis["results"], analysis["patterns"], current_lang)
+            analysis["summary"] = new_summary
+            st.session_state["full_analysis"] = analysis
+            st.session_state["last_language"] = current_lang
+    elif not analysis:
+        st.session_state["last_language"] = current_lang
+
     if not analysis:
         st.info("No data available.")
         return

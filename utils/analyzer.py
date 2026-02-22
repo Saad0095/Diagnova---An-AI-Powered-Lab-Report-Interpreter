@@ -196,7 +196,7 @@ def generate_health_coach_plan(results: list, patterns: list, profile: dict):
     except:
         return "Unable to generate health plan. Please consult your physician."
 
-def generate_summary_ai(results: list, patterns: list):
+def generate_summary_ai(results: list, patterns: list, language: str = "English"):
     """
     FEATURE 3: AI-Generated Patient Summary
     Uses structured data to generate a cohesive summary.
@@ -205,7 +205,7 @@ def generate_summary_ai(results: list, patterns: list):
     borderline_count = len([r for r in results if r["status"] == "yellow"])
     
     prompt = f"""
-    You are a clinical summary assistant. Generate a patient-friendly summary.
+    You are a clinical summary assistant. Generate a patient-friendly summary in {language}.
     
     Metrics:
     - Abnormal: {abnormal_count}
@@ -220,6 +220,7 @@ def generate_summary_ai(results: list, patterns: list):
     - DO NOT diagnose. Use words like "suggests", "may indicate", "consider discussing".
     - DO NOT prescribe.
     - RECOMMEND next steps (monitoring, consulting physician).
+    - Provide the response in {language}.
     - Keep it under 100 words.
     """
     
@@ -256,6 +257,7 @@ def process_lab_results(extraction_package: dict, patient_context: dict = None):
     """
     data = extraction_package.get("data", {})
     metadata = extraction_package.get("metadata", {})
+    user_profile = st.session_state.get("user_profile", {})
     
     if patient_context is None:
         patient_context = {"gender": "default", "age_group": "adult"}
@@ -280,13 +282,13 @@ def process_lab_results(extraction_package: dict, patient_context: dict = None):
     patterns = detect_clinical_patterns(data)
     
     # Feature 3: Summary
-    ai_summary = generate_summary_ai(results, patterns)
+    language = user_profile.get("language", "English")
+    ai_summary = generate_summary_ai(results, patterns, language)
     
     # Feature 4: Confidence
     confidence = calculate_confidence_score(metadata, len(results))
     
     # Phase 2 - Feature 3: Health Coach
-    user_profile = st.session_state.get("user_profile", {})
     health_plan = generate_health_coach_plan(results, patterns, user_profile)
     
     return {
